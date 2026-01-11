@@ -15,6 +15,12 @@
     ],
     "configurations": [
         {
+            "name": "C#: RaGsys Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/RaGsys 2025 v0.3/RaGsys/RaGsys.csproj"
+        },
+        {
             "name": "BackEnd",
             "type": "coreclr",
             "request": "launch",
