@@ -117,7 +117,7 @@ public static class ByteCodeGenerator
         throw new Exception("Unknown expression on line + " + number);
     }
 
-    private static List<Instruction> ParseExpression(string expression, bool toBool)
+    private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code)
     {
         // TODO:
     }
