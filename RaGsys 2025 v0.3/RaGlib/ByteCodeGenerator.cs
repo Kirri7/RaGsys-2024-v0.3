@@ -117,7 +117,7 @@ public static class ByteCodeGenerator
         throw new Exception("Unknown expression on line + " + number);
     }
 
-    private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code)
+    private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code, int line)
     {
         // TODO:
     }
@@ -245,7 +245,7 @@ public static class ByteCodeGenerator
         public JumpInstruction StartIns;
         public JumpInstruction EndIns;
 
-        public ContainerInstruction(ContainerInstructionType type, string expression, CodeBlock currentBlock, int line) : base(line)
+        public ContainerInstruction(ContainerInstructionType type, string expression, CodeBlock? currentBlock, ByteCode code, int line) : base(line)
         {
             InsType = type;
             Expression = new CodeBlock();
@@ -254,7 +254,7 @@ public static class ByteCodeGenerator
             Inner.Parent = currentBlock;
 
             if (InsType != ContainerInstructionType.ELSE)
-                Expression.Instructions = ParseExpression(expression, true);
+                Expression.Instructions = ParseExpression(expression, true, code, line);
 
             switch (InsType)
             {
