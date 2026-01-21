@@ -2153,7 +2153,10 @@ namespace RaGsystems
                                 { "(", "E", ")", new SDT.Types.Actions((S) => S["F"]["value"] = S["E"]["value"]) });
 
                             SDT.LLTranslator lAttrTranslator = new SDT.LLTranslator(lAttrSDT);
-                            if (lAttrTranslator.Parse(new SDT.ArithmLexer().Parse(Console.ReadLine())))
+                            Console.Write("Введите выражение: ");
+                            var arithmString = new SDT.ArithmLexer().Parse(Console.ReadLine());
+                            Console.WriteLine(string.Join(" ", arithmString));
+                            if (lAttrTranslator.Parse(arithmString))
                             {
                                 Console.WriteLine("\nУспех. Строка соответствует грамматике.");
                             }
