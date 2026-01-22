@@ -2106,7 +2106,7 @@ namespace RaGsystems
                               "S");
 
                             lAttrSDT.AddRule("S",
-                              new List<SDT.Symbol>() { "E", new SDT.Types.Actions((S) => Console.Write(S["E"]["value"].ToString())) });
+                              new List<SDT.Symbol>() { "E", new SDT.Types.Actions((S) => Console.Write("Answer is " + S["E"]["value"].ToString())) }); // this writes answer
 
                             lAttrSDT.AddRule("E",
                               new List<SDT.Symbol>()
