@@ -724,12 +724,12 @@ public class Symbol : ICloneable {
         static public Types.Actions SpacedPrint(object obj) =>
             (_) => _outputBuilder?.Append(obj.ToString() + " ");
         static public Types.Actions PrintIdentifier = 
-            (dict) => _outputBuilder?.Append("v(" + dict["identifier"]?.Attributes?["literal"]?.ToString() + " "); // variable
+            (dict) => _outputBuilder?.Append("v(" + dict["identifier"]?.Attributes?["literal"]?.ToString() + ") "); // variable
         
         static public Types.Actions PrintInteger = 
-            (dict) => _outputBuilder?.Append("c(" + dict["integer"]?.Attributes?["literal"]?.ToString() + " "); // constant
+            (dict) => _outputBuilder?.Append("c(" + dict["integer"]?.Attributes?["literal"]?.ToString() + ") "); // constant
         
         static public Types.Actions PrintFloat = 
-            (dict) => _outputBuilder?.Append("c(" + dict["float"]?.Attributes?["literal"]?.ToString() + " "); // constant
+            (dict) => _outputBuilder?.Append("c(" + dict["float"]?.Attributes?["literal"]?.ToString() + ") "); // constant
     }
 }
