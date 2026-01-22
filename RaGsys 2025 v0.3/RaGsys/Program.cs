@@ -2057,17 +2057,26 @@ namespace RaGsystems
                             i+i*i без чисел
                             */
                             Console.WriteLine("введи что-то вроде 'i+i*i'");
-                            var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "i", "+", "*", "(", ")" },
+                            var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "a", "b", "c", "d", "+", "*", "-", "/", "(", ")" },
                               new List<SDT.Symbol>() { "E", "E'", "T", "T'", "F" },
                               "E");
 
                             chainPostfix.AddRule("E", new List<SDT.Symbol>() { "T", "E'" });
+
                             chainPostfix.AddRule("E'", new List<SDT.Symbol>() { "+", "T", SDT.Actions.Print("+"), "E'" });
+                            chainPostfix.AddRule("E'", new List<SDT.Symbol>() { "-", "T", SDT.Actions.Print("-"), "E'" });
                             chainPostfix.AddRule("E'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
+
                             chainPostfix.AddRule("T", new List<SDT.Symbol>() { "F", "T'" });
+
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { "*", "F", SDT.Actions.Print("*"), "T'" });
+                            chainPostfix.AddRule("T'", new List<SDT.Symbol>() { "/", "F", SDT.Actions.Print("/"), "T'" });
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "i", SDT.Actions.Print("i") });
+
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "a", SDT.Actions.Print("a") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "b", SDT.Actions.Print("b") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "c", SDT.Actions.Print("c") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "d", SDT.Actions.Print("d") });
                             chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "E", ")" });
 
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
