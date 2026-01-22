@@ -46,6 +46,7 @@ namespace RaGsystems
     // - Курсовые проекты (I1-I12)
     static void Dialog()
     {
+      Console.WriteLine(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       Console.WriteLine("Наберите соответствующий номер лабораторной или курсовой и нажмите <Enter>");
       Console.WriteLine("Лабораторные работы:");
       Console.WriteLine("1.1  Лемма о накачке рег., КС языки");
@@ -112,6 +113,7 @@ namespace RaGsystems
       Console.WriteLine(
         "I19  Разработка контекстно-свободной грамматики исчисления высказываний к нормальной форме и построение эквивалентного магазинного автомата");
       Console.WriteLine("I20 Контекстно-зависимая грамматика (LBA/TM) для a^n b^n c^n");
+      Console.WriteLine(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
 
     }
 
@@ -2003,6 +2005,7 @@ namespace RaGsystems
                             Console.ReadLine();
                             break;
                         }
+                        // --------------------------------------------------------------------------
                     case "I6":
                         {
                             var atgr = new ATGrammar(
@@ -2058,25 +2061,56 @@ namespace RaGsystems
                             */
                             Console.WriteLine("введи что-то вроде 'i+i*i'");
                             var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "identifier", "integer", "float", "+", "*", "-", "/", "(", ")", "%", "<", ">", "==", "<=", ">=" },
-                              new List<SDT.Symbol>() { "E", "E'", "T", "T'", "F" },
-                              "E");
+                              new List<SDT.Symbol>() { "C", "C'", "E", "E'", "T", "T'", "F" },
+                              "C");
+
+
+                            chainPostfix.AddRule("C", new List<SDT.Symbol>() { "E", "C'" });
+                            var comparisonOperators = new List<(string op, string action)>
+                            {
+                                ("<", "<"),
+                                (">", ">"),
+                                ("==", "=="),
+                                ("<=", "<="),
+                                (">=", ">=")
+                            };
+                            foreach (var (op, action) in comparisonOperators)
+                            {
+                              chainPostfix.AddRule("C'", new List<SDT.Symbol>() { op, "E", SDT.Actions.PythonPrint(action), "C'" });
+                            }
+                            chainPostfix.AddRule("C'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
+
 
                             chainPostfix.AddRule("E", new List<SDT.Symbol>() { "T", "E'" });
-
-                            chainPostfix.AddRule("E'", new List<SDT.Symbol>() { "+", "T", SDT.Actions.Print("+"), "E'" });
-                            chainPostfix.AddRule("E'", new List<SDT.Symbol>() { "-", "T", SDT.Actions.Print("-"), "E'" });
+                            var additiveOperators = new List<(string op, string action)> 
+                            {
+                                ("+", "+"),
+                                ("-", "-")
+                            };
+                            foreach (var (op, action) in additiveOperators)
+                            {
+                              chainPostfix.AddRule("E'", new List<SDT.Symbol>() { op, "T", SDT.Actions.PythonPrint(action), "E'" });
+                            }
                             chainPostfix.AddRule("E'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
-                            chainPostfix.AddRule("T", new List<SDT.Symbol>() { "F", "T'" });
 
-                            chainPostfix.AddRule("T'", new List<SDT.Symbol>() { "*", "F", SDT.Actions.Print("*"), "T'" });
-                            chainPostfix.AddRule("T'", new List<SDT.Symbol>() { "/", "F", SDT.Actions.Print("/"), "T'" });
+                            chainPostfix.AddRule("T", new List<SDT.Symbol>() { "F", "T'" });
+                            var multiplicativeOperators = new List<(string op, string action)> 
+                            {
+                                ("*", "*"),
+                                ("/", "/"),
+                                ("%", "%")
+                            };
+                            foreach (var (op, action) in multiplicativeOperators)
+                            {
+                              chainPostfix.AddRule("T'", new List<SDT.Symbol>() { op, "F", SDT.Actions.PythonPrint(action), "T'" });
+                            }
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.Print("identifier") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.Print("integer") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.Print("float") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "E", ")" });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.PythonPrint("identifier") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.PythonPrint("integer") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.PythonPrint("float") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "C", ")" });
 
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
                             // var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
@@ -2109,6 +2143,8 @@ namespace RaGsystems
                             SDT.Types.Attrs lAttrs = new SDT.Types.Attrs() { ["inh"] = 0, ["syn"] = 0 };
                             var lAttrSDT = new SDT.Scheme(
                               new List<SDT.Symbol>() { new SDT.Symbol("number", sAttrs), "+", "*", "(", ")" },
+                              // new List<SDT.Symbol>() { "i", SDT.Actions.Print("i") });
+
                               new List<SDT.Symbol>()
                               {
                 "S", new SDT.Symbol("E", sAttrs), new SDT.Symbol("E'", lAttrs),

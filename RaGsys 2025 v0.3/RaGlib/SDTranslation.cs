@@ -531,7 +531,7 @@ public class Symbol : ICloneable {
                         Stack.Push(tmp.Pop());
                     }
 
-                    op.Value.Invoke(symbols.Copies);
+                    op.Value.Invoke(symbols.Copies); // this one WriteLine!
                 }
                 else if (curStackSymbol is SynthSymbol synth && synth != null) // в вершине стека запись синтеза
                 {
@@ -715,5 +715,8 @@ public class Symbol : ICloneable {
         /// Печать something  консоль
         static public Types.Actions Print(object obj) =>
             (_) => Console.Write(obj.ToString());
+
+        static public Types.Actions PythonPrint(object obj) =>
+            (_) => Console.Write(obj.ToString()+" ");
     }
 }
