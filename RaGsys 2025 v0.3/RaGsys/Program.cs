@@ -2116,6 +2116,10 @@ namespace RaGsystems
                             // var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
                             var inp_str = new SDT.PythonLexer().Parse(Console.ReadLine());
                             Console.WriteLine(string.Join(" ", inp_str));
+                            
+                            var outputBuilder = new StringBuilder();
+                            SDT.Actions.SetOutputBuilder(outputBuilder);
+
                             if (chainTranslator.Parse(inp_str))
                             {
                                 Console.WriteLine("\nУспех. Строка соответствует грамматике.");
@@ -2124,6 +2128,7 @@ namespace RaGsystems
                             {
                                 Console.WriteLine("\nНе успех. Строка не соответствует грамматике.");
                             }
+                            Console.WriteLine(outputBuilder.ToString());
 
                             break;
                         }
