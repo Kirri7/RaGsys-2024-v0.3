@@ -2056,6 +2056,7 @@ namespace RaGsystems
                             Выражения состоят из i, +, * и скобок
                             i+i*i без чисел
                             */
+                            Console.WriteLine("введи что-то вроде 'i+i*i'");
                             var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "i", "+", "*", "(", ")" },
                               new List<SDT.Symbol>() { "E", "E'", "T", "T'", "F" },
                               "E");
@@ -2070,7 +2071,9 @@ namespace RaGsystems
                             chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "E", ")" });
 
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
-                            var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
+                            // var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
+                            var inp_str = new SDT.ArithmLexer().Parse(Console.ReadLine());
+                            Console.WriteLine("inp_str = " + inp_str.ToString());
                             if (chainTranslator.Parse(inp_str))
                             {
                                 Console.WriteLine("\nУспех. Строка соответствует грамматике.");
