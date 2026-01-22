@@ -82,4 +82,113 @@ namespace SDT
             return result;
         }
     }
+
+    public class PythonLexer : Lexer
+    {
+        public override List<Symbol> Parse(string str)
+        {
+            // TODO 11a + 2 exception
+            List<Symbol> result = new List<Symbol>();
+            int i = 0;
+            while (i < str.Length)
+            {
+                // Пропускаем пробельные символы
+                if (Char.IsWhiteSpace(str[i]))
+                {
+                    i++;
+                    continue;
+                }
+                // Разбор чисел (целых и вещественных)
+                if (Char.IsDigit(str[i]))
+                {
+                    string numberStr = "";
+                    bool isFloat = false;
+                    // Собираем целую часть числа
+                    while (i < str.Length && Char.IsDigit(str[i]))
+                    {
+                        numberStr += str[i];
+                        i++;
+                    }
+                    // Проверяем на наличие дробной части
+                    if (i < str.Length && str[i] == '.')
+                    {
+                        isFloat = true;
+                        numberStr += str[i];
+                        i++;
+                        // Собираем дробную часть
+                        while (i < str.Length && Char.IsDigit(str[i]))
+                        {
+                            numberStr += str[i];
+                            i++;
+                        }
+                    }
+                    // Создаём токен числа
+                    if (isFloat)
+                    {
+                        result.Add(new Dictionary<string, object>()
+                        {
+                            ["NAME"] = "float",
+                            ["literal"] = numberStr
+                        });
+                    }
+                    else
+                    {
+                        result.Add(new Dictionary<string, object>()
+                        {
+                            ["NAME"] = "integer",
+                            ["literal"] = numberStr
+                        });
+                    }
+                    continue;
+                }
+                // Разбор идентификаторов (многобуквенные переменные)
+                if (Char.IsLetter(str[i]) || str[i] == '_')
+                {
+                    string identifier = "";
+                    while (i < str.Length && (Char.IsLetterOrDigit(str[i]) || str[i] == '_'))
+                    {
+                        identifier += str[i];
+                        i++;
+                    }
+                    result.Add(new Dictionary<string, object>()
+                    {
+                        ["NAME"] = "identifier",
+                        ["literal"] = identifier
+                    });
+                    continue;
+                }
+                // Разбор операторов сравнения (==, <=, >=)
+                if (i + 1 < str.Length) // TODO make exception
+                {
+                    string twoCharOp = str.Substring(i, 2);
+                    if (twoCharOp == "==" || twoCharOp == "<=" || twoCharOp == ">=")
+                    {
+                        result.Add(new Dictionary<string, object>()
+                        {
+                            // ["NAME"] = "operator",
+                            ["NAME"] = twoCharOp
+                        });
+                        i += 2;
+                        continue;
+                    }
+                }
+                // Разбор одиночных операторов и символов
+                string singleChar = str[i].ToString();
+                if ("+-*/%<>".Contains(singleChar))
+                {
+                    result.Add(new Dictionary<string, object>()
+                    {
+                        // ["NAME"] = "operator",
+                        ["NAME"] = singleChar
+                    });
+                }
+                else
+                {
+                    result.Add(new Symbol(singleChar));
+                }
+                i++;
+            }
+            return result;
+        }
+    }
 }
