@@ -716,7 +716,14 @@ public class Symbol : ICloneable {
         static public Types.Actions Print(object obj) =>
             (_) => Console.Write(obj.ToString());
 
-        static public Types.Actions PythonPrint(object obj) =>
+        static public Types.Actions SpacedPrint(object obj) =>
             (_) => Console.Write(obj.ToString()+" ");
+
+        static public Types.Actions PrintIdentifier = 
+            (dict) => Console.Write(dict["identifier"]?.Attributes?["literal"]?.ToString() + " ");
+        static public Types.Actions PrintInteger = 
+            (dict) => Console.Write(dict["integer"]?.Attributes?["literal"]?.ToString() + " ");
+        static public Types.Actions PrintFloat = 
+            (dict) => Console.Write(dict["float"]?.Attributes?["literal"]?.ToString() + " ");
     }
 }

@@ -2076,7 +2076,7 @@ namespace RaGsystems
                             };
                             foreach (var (op, action) in comparisonOperators)
                             {
-                              chainPostfix.AddRule("C'", new List<SDT.Symbol>() { op, "E", SDT.Actions.PythonPrint(action), "C'" });
+                              chainPostfix.AddRule("C'", new List<SDT.Symbol>() { op, "E", SDT.Actions.SpacedPrint(action), "C'" });
                             }
                             chainPostfix.AddRule("C'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
@@ -2089,7 +2089,7 @@ namespace RaGsystems
                             };
                             foreach (var (op, action) in additiveOperators)
                             {
-                              chainPostfix.AddRule("E'", new List<SDT.Symbol>() { op, "T", SDT.Actions.PythonPrint(action), "E'" });
+                              chainPostfix.AddRule("E'", new List<SDT.Symbol>() { op, "T", SDT.Actions.SpacedPrint(action), "E'" });
                             }
                             chainPostfix.AddRule("E'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
@@ -2103,13 +2103,13 @@ namespace RaGsystems
                             };
                             foreach (var (op, action) in multiplicativeOperators)
                             {
-                              chainPostfix.AddRule("T'", new List<SDT.Symbol>() { op, "F", SDT.Actions.PythonPrint(action), "T'" });
+                              chainPostfix.AddRule("T'", new List<SDT.Symbol>() { op, "F", SDT.Actions.SpacedPrint(action), "T'" });
                             }
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.PythonPrint("identifier") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.PythonPrint("integer") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.PythonPrint("float") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.PrintIdentifier });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.PrintInteger });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.PrintFloat });
                             chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "C", ")" });
 
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
