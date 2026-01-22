@@ -74,8 +74,8 @@ namespace RaGsystems
       Console.WriteLine("7.10 Конфигурируемый МП-автомат: недетерминированный МПА");
       Console.WriteLine("7.11 Расширенный МП-автомат (детерминированный)");
       Console.WriteLine("7.12 Конфигурируемый МП-автомат: недетерминированный РМПА");
-
-
+      
+      
       Console.WriteLine("");
       Console.WriteLine("9.1  Для LL(1) анализатора построить управляющую таблицу M.\n" +
                         "     Аналитически написать такты работы LL(1) анализатора для выведенной цепочки.");
@@ -112,6 +112,7 @@ namespace RaGsystems
       Console.WriteLine(
         "I19  Разработка контекстно-свободной грамматики исчисления высказываний к нормальной форме и построение эквивалентного магазинного автомата");
       Console.WriteLine("I20 Контекстно-зависимая грамматика (LBA/TM) для a^n b^n c^n");
+      Console.WriteLine("I21 Перевод языка программирования в байт код");
 
     }
 
@@ -2791,6 +2792,36 @@ namespace RaGsystems
                             Console.ReadLine();
                         }
                         break;
+
+                    case "I21":
+                    {
+                        string code = "";
+                        string line = Console.ReadLine();
+                        while (line != "'''")
+                        {
+                            if (code != "")
+                                code += '\n';
+                            code += line;
+                            line = Console.ReadLine();
+                        }
+
+                        var ByteCode = BCG.ByteCodeGenerator.Generate(code);
+                        System.Console.WriteLine(ByteCode.Code);
+                        
+                        System.Console.WriteLine("");
+                        System.Console.WriteLine("Names:");
+                        foreach (var name in ByteCode.NameTable)
+                        {
+                            System.Console.WriteLine($"{name.Key} : {name.Value}");
+                        }
+                        System.Console.WriteLine("Constants:");
+                        foreach (var name in ByteCode.ConstTable)
+                        {
+                            System.Console.WriteLine($"{name.Key} : {name.Value}");
+                        }
+                        
+                        break;
+                    }
 
                 } // end switch
             } // end while

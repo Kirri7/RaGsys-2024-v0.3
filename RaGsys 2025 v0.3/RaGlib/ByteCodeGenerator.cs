@@ -1,7 +1,20 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace BCG;
 
+public static class DictionaryExtensions
+{
+    public static int GetOrAdd(this Dictionary<string, int> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out int value))
+        {
+            value = dict.Count;
+            dict.Add(key, value);
+        }
+        return value;
+    }
+}
 public static class ByteCodeGenerator
 {
     public static ByteCode Generate(string text)
@@ -39,12 +52,12 @@ public static class ByteCodeGenerator
                 }
             }
 
-            var lineType = GetLineType(line, i);
+            var lineType = GetLineType(line, i + 1);
 
             mustIndent = lineType is StringType.IF or StringType.ELIF or StringType.ELSE or StringType.WHILE;
             
             
-            
+            ParseLine(line, i + 1, lineType, ref currentCodeBlock, ref result);
 
 
             previousIndentation = currentIndentation;
@@ -78,7 +91,7 @@ public static class ByteCodeGenerator
                 throw new Exception("Invalid indentation on line " + number);
             }
 
-            return count;
+            return count / 4;
         } else if (line[0] == '\t')
         {
             return line.TakeWhile(c => c == '\t').Count();
@@ -94,8 +107,8 @@ public static class ByteCodeGenerator
     {
         line = line.Trim();
         
-        string assignPattern = @"^[a-zA-Z][a-zA-Z0-9_]* *= *[a-zA-Z0-9_ \(\)\+\-\*/]+$";
-        string printPattern = @"^print\([a-zA-Z0-9_ \(\)\+\-\*/]+\)$";
+        string assignPattern = @"^[a-zA-Z][a-zA-Z0-9_]* *= *[a-zA-Z0-9_ \(\)\+\-\*/=<>]+$";
+        string printPattern = @"^print\([a-zA-Z0-9_ \(\)\+\-\*/=<>]+\)$";
         string ifPattern = @"^if [a-zA-Z0-9_ \(\)\+\-\*/=<>]+:$";
         string elifPattern = @"^elif [a-zA-Z0-9_ \(\)\+\-\*/=<>]+:$";
         string elsePattern = @"^else:$";
@@ -114,7 +127,68 @@ public static class ByteCodeGenerator
         if (Regex.IsMatch(line, whilePattern))
             return StringType.WHILE;
 
-        throw new Exception("Unknown expression on line + " + number);
+        throw new Exception("Unknown expression on line " + number);
+    }
+
+    private static void ParseLine(string line, int lineNumber, StringType type, ref CodeBlock currentBlock, ref ByteCode code)
+    {
+        line = line.Trim();
+        switch (type)
+        {
+            case StringType.ASSIGN:
+            {
+                int idx = line.IndexOf('=');
+                var expr = line.Substring(idx + 1).Trim();
+                currentBlock.Instructions.AddRange(ParseExpression(expr, false, code, lineNumber));
+                var variable = line.Substring(0, idx).Trim();
+                if (variable == "print" || variable == "if" || variable == "elif" || variable == "else" ||
+                    variable == "while")
+                    throw new Exception("Invalid variable name on line " + lineNumber);
+                currentBlock.AddInstruction(new MemoryInstruction(MemoryInstructionType.STORE_NAME,
+                    code.NameTable.GetOrAdd(variable), lineNumber));
+                break;
+            }
+            case StringType.PRINT:
+            {
+                var idx = line.IndexOf('(');
+                var expr = line.Substring(idx + 1, line.Length - idx - 2).Trim();
+                currentBlock.AddInstruction(new MemoryInstruction(MemoryInstructionType.LOAD_NAME, code.NameTable.GetOrAdd("print"), lineNumber));
+                currentBlock.AddInstruction(new HelperInstruction(HelperInstructionType.PUSH_NULL, lineNumber));
+                currentBlock.Instructions.AddRange(ParseExpression(expr, false, code, lineNumber));
+                currentBlock.AddInstruction(new HelperInstruction(HelperInstructionType.CALL, lineNumber));
+                currentBlock.AddInstruction(new HelperInstruction(HelperInstructionType.POP_TOP, lineNumber));
+                
+                break;
+            }
+            case StringType.IF:
+            {
+                var expr = line.Substring(2, line.Length - 3).Trim();
+                currentBlock.AddInstruction(new ContainerInstruction(ContainerInstructionType.IF, expr, currentBlock, code, lineNumber));
+                currentBlock = currentBlock.Instructions.Last().GetInheritedCodeBlock();
+                
+                break;
+            }
+            case StringType.ELIF:
+            {
+                var expr = line.Substring(4, line.Length - 5).Trim();
+                currentBlock.AddInstruction(new ContainerInstruction(ContainerInstructionType.ELIF, expr, currentBlock, code, lineNumber));
+                currentBlock = currentBlock.Instructions.Last().GetInheritedCodeBlock();
+                break;
+            }
+            case StringType.ELSE:
+            {
+                currentBlock.AddInstruction(new ContainerInstruction(ContainerInstructionType.ELSE, "", currentBlock, code, lineNumber));
+                currentBlock = currentBlock.Instructions.Last().GetInheritedCodeBlock();
+                break;
+            }
+            case StringType.WHILE:
+            {
+                var expr = line.Substring(5, line.Length - 6).Trim();
+                currentBlock.AddInstruction(new ContainerInstruction(ContainerInstructionType.WHILE, expr, currentBlock, code, lineNumber));
+                currentBlock = currentBlock.Instructions.Last().GetInheritedCodeBlock();
+                break;
+            }
+        }
     }
 
     private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code, int line)
@@ -154,7 +228,7 @@ public static class ByteCodeGenerator
         public virtual CodeBlock? GetInheritedCodeBlock() => null;
         public virtual bool NeedMarkNext() => false;
         public virtual bool NeedMarkThis() => false;
-        public virtual void UseMarks(CodeBlock code) {}
+        public virtual void UseMarks(CodeBlock code, int idx) {}
         public abstract string Dump(ref int previousInstructionLine, ByteCode code);
     }
 
@@ -164,7 +238,8 @@ public static class ByteCodeGenerator
         RETURN_VALUE,
         TO_BOOL,
         CALL,
-        POP_TOP
+        POP_TOP,
+        PUSH_NULL
     }
 
     private class HelperInstruction : Instruction
@@ -178,15 +253,15 @@ public static class ByteCodeGenerator
 
         public override string Dump(ref int previousInstructionLine, ByteCode _)
         {
-            string st = previousInstructionLine == Line ? "" : "\n";
-            string number = previousInstructionLine == Line ? "" : Line.ToString();
+            string st = previousInstructionLine >= Line ? "" : "\n";
+            string number = previousInstructionLine >= Line && Line != 0 ? "" : Line.ToString();
             string gotoMark = GoToId == 0 ? "" : "L" + GoToId.ToString() + ":";
             string name = InsType.ToString();
-            string value = InsType == HelperInstructionType.CALL ? "1" : "";
+            string value = InsType == HelperInstructionType.CALL ? "1" : InsType == HelperInstructionType.RESUME ? "0" : "";
 
             previousInstructionLine = Line;
 
-            return $"{st}{number, 3} {gotoMark, 5}     {name, -22} {value}";
+            return $"{st}{number, 3} {gotoMark, 5}     {name, -22} {value, 3}";
         }
     }
 
@@ -211,13 +286,13 @@ public static class ByteCodeGenerator
 
         public void SetValueAndMark(int value, int mark)
         {
-            Value = value;
+            Value = value * 2;
             MarkId = mark;
         }
 
         public override string Dump(ref int previousInstructionLine, ByteCode _)
         {
-            string number = previousInstructionLine == Line ? "" : Line.ToString();
+            string number = previousInstructionLine >= Line ? "" : Line.ToString();
             string gotoMark = GoToId == 0 ? "" : "L" + GoToId.ToString() + ":";
             string name = InsType.ToString();
             string value = Value.ToString();
@@ -284,7 +359,7 @@ public static class ByteCodeGenerator
             if (InsType != ContainerInstructionType.ELSE)
             {
                 result += Expression.DumpToByteCode(code, ref previousInstructionLine);
-                result += StartIns.Dump(ref previousInstructionLine, code);
+                result += StartIns.Dump(ref previousInstructionLine, code) + "\n";
             }
 
             result += Inner.DumpToByteCode(code, ref previousInstructionLine);
@@ -299,18 +374,20 @@ public static class ByteCodeGenerator
 
         public override CodeBlock? GetInheritedCodeBlock() => Inner;
 
-        public override bool NeedMarkNext() => InsType != ContainerInstructionType.ELSE;
+        public override bool NeedMarkNext() => true;
         public override bool NeedMarkThis() => InsType == ContainerInstructionType.WHILE;
 
         public override int GetGoToId()
         {
-            return InsType == ContainerInstructionType.ELSE ? 0 : Expression.Instructions[0].GetGoToId();
+            return InsType == ContainerInstructionType.ELSE ? Inner.Instructions[0].GetGoToId() : Expression.Instructions[0].GetGoToId();
         }
 
         public override void SetGoToId(int id)
         {
             if (InsType != ContainerInstructionType.ELSE)
                 Expression.Instructions[0].SetGoToId(id);
+            else
+                Inner.Instructions[0].SetGoToId(id);
         }
 
         public override void SetId(ref int id)
@@ -321,6 +398,7 @@ public static class ByteCodeGenerator
                 StartIns.SetId(ref id);
             }
 
+            Id = id;
             Inner.SetInstructionIdsInternal(ref id);
 
             if (InsType != ContainerInstructionType.ELSE)
@@ -329,9 +407,79 @@ public static class ByteCodeGenerator
             }
         }
 
-        public override void UseMarks(CodeBlock code)
+        public override void UseMarks(CodeBlock? code, int idx)
         {
-            base.UseMarks(code);
+            if (InsType == ContainerInstructionType.ELSE)
+                return;
+
+            var innerIns = SearchInnerIdx(code, idx);
+            
+            StartIns.SetValueAndMark(innerIns.Id - StartIns.Id, innerIns.GetGoToId());
+            
+            if (InsType == ContainerInstructionType.WHILE)
+            {
+                EndIns.SetValueAndMark(EndIns.Id - Expression.Instructions[0].Id, Expression.Instructions[0].GetGoToId());
+            }
+            else
+            {
+                var outerIns = SearchOuterIdx(code, idx);
+                EndIns.SetValueAndMark(outerIns.Id - EndIns.Id, outerIns.GetGoToId());
+            }
+        }
+
+        private static Instruction SearchOuterIdx(CodeBlock? code, int idx, bool firstCall = true)
+        {
+            bool foundElse = false;
+            int outerIdx = 0;
+            for (int i = idx + 1; i < code.Instructions.Count; ++i)
+            {
+                var cont = code.Instructions[i] as ContainerInstruction;
+                if (foundElse || !firstCall || cont is null || cont.InsType == ContainerInstructionType.WHILE || cont.InsType == ContainerInstructionType.IF)
+                {
+                    outerIdx = i;
+                    break;
+                }
+
+                if (cont.InsType == ContainerInstructionType.ELSE)
+                    foundElse = true;
+            }
+
+            if (outerIdx == 0)
+            {
+                var parentCode = code.Parent;
+                for (int i = 0; i < parentCode.Instructions.Count; ++i)
+                {
+                    if (parentCode.Instructions[i].GetInheritedCodeBlock() == code)
+                    {
+                        return SearchOuterIdx(parentCode, i, false);
+                    }
+                }
+            }
+
+            return code.Instructions[outerIdx];
+        }
+        private static Instruction SearchInnerIdx(CodeBlock? code, int idx, bool firstCall = true)
+        {
+            int outerIdx = 0;
+            for (int i = idx + 1; i < code.Instructions.Count; ++i)
+            {
+                    outerIdx = i;
+                    break;
+            }
+
+            if (outerIdx == 0)
+            {
+                var parentCode = code.Parent;
+                for (int i = 0; i < parentCode.Instructions.Count; ++i)
+                {
+                    if (parentCode.Instructions[i].GetInheritedCodeBlock() == code)
+                    {
+                        return SearchInnerIdx(parentCode, i, false);
+                    }
+                }
+            }
+
+            return code.Instructions[outerIdx];
         }
     }
     
@@ -356,8 +504,8 @@ public static class ByteCodeGenerator
 
         public override string Dump(ref int previousInstructionLine, ByteCode code)
         {
-            string st = previousInstructionLine == Line ? "" : "\n";
-            string number = previousInstructionLine == Line ? "" : Line.ToString();
+            string st = previousInstructionLine >= Line ? "" : "\n";
+            string number = previousInstructionLine >= Line ? "" : Line.ToString();
             string gotoMark = GoToId == 0 ? "" : "L" + GoToId.ToString() + ":";
             string name = InsType.ToString();
             string value = Value.ToString();
@@ -376,7 +524,7 @@ public static class ByteCodeGenerator
             var result = $"{st}{number, 3} {gotoMark, 5}     {name, -22} {value, 3}";
 
             if (!string.IsNullOrWhiteSpace(annotation))
-                result += "(" + annotation + ")";
+                result += " (" + annotation + ")";
             return result;
         }
     }
@@ -401,8 +549,8 @@ public static class ByteCodeGenerator
 
         public override string Dump(ref int previousInstructionLine, ByteCode _)
         {
-            string st = previousInstructionLine == Line ? "" : "\n";
-            string number = previousInstructionLine == Line ? "" : Line.ToString();
+            string st = previousInstructionLine >= Line ? "" : "\n";
+            string number = previousInstructionLine >= Line ? "" : Line.ToString();
             string gotoMark = GoToId == 0 ? "" : "L" + GoToId.ToString() + ":";
             string name = "BINARY_OP";
             string value = "";
@@ -459,8 +607,8 @@ public static class ByteCodeGenerator
 
         public override string Dump(ref int previousInstructionLine, ByteCode _)
         {
-            string st = previousInstructionLine == Line ? "" : "\n";
-            string number = previousInstructionLine == Line ? "" : Line.ToString();
+            string st = previousInstructionLine >= Line ? "" : "\n";
+            string number = previousInstructionLine >= Line ? "" : Line.ToString();
             string gotoMark = GoToId == 0 ? "" : "L" + GoToId.ToString() + ":";
             string name = "BINARY_OP";
             string value = "";
@@ -573,12 +721,12 @@ public static class ByteCodeGenerator
 
         private void UseMarks()
         {
-            foreach (var instruction in Instructions)
+            for (int i = 0; i < Instructions.Count; ++i)
             {
-                instruction.UseMarks(this);
-                if (instruction.GetInheritedCodeBlock() is not null)
+                Instructions[i].UseMarks(this, i);
+                if (Instructions[i].GetInheritedCodeBlock() is not null)
                 {
-                    instruction.GetInheritedCodeBlock().UseMarks();
+                    Instructions[i].GetInheritedCodeBlock().UseMarks();
                 }
             }
         }
