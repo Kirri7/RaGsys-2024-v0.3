@@ -2057,7 +2057,7 @@ namespace RaGsystems
                             i+i*i без чисел
                             */
                             Console.WriteLine("введи что-то вроде 'i+i*i'");
-                            var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "a", "b", "c", "d", "+", "*", "-", "/", "(", ")" },
+                            var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "identifier", "integer", "float", "+", "*", "-", "/", "(", ")", "%", "<", ">", "==", "<=", ">=" },
                               new List<SDT.Symbol>() { "E", "E'", "T", "T'", "F" },
                               "E");
 
@@ -2073,15 +2073,14 @@ namespace RaGsystems
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { "/", "F", SDT.Actions.Print("/"), "T'" });
                             chainPostfix.AddRule("T'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
 
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "a", SDT.Actions.Print("a") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "b", SDT.Actions.Print("b") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "c", SDT.Actions.Print("c") });
-                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "d", SDT.Actions.Print("d") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.Print("identifier") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.Print("integer") });
+                            chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.Print("float") });
                             chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "E", ")" });
 
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
                             // var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
-                            var inp_str = new SDT.ArithmLexer().Parse(Console.ReadLine());
+                            var inp_str = new SDT.PythonLexer().Parse(Console.ReadLine());
                             Console.WriteLine(string.Join(" ", inp_str));
                             if (chainTranslator.Parse(inp_str))
                             {
