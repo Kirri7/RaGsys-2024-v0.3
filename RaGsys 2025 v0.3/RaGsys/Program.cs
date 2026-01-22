@@ -2082,7 +2082,7 @@ namespace RaGsystems
                             var chainTranslator = new SDT.LLTranslator(chainPostfix);
                             // var inp_str = new SDT.SimpleLexer().Parse(Console.ReadLine());
                             var inp_str = new SDT.ArithmLexer().Parse(Console.ReadLine());
-                            Console.WriteLine("inp_str = " + inp_str.ToString());
+                            Console.WriteLine(string.Join(" ", inp_str));
                             if (chainTranslator.Parse(inp_str))
                             {
                                 Console.WriteLine("\nУспех. Строка соответствует грамматике.");
