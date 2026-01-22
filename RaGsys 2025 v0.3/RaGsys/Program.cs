@@ -2118,9 +2118,16 @@ namespace RaGsystems
                             lAttrSDT.AddRule("E'",
                               new List<SDT.Symbol>()
                               {
-                "+", "T", new SDT.Types.Actions((S) => S["E'1"]["inh"] = (int)S["E'"]["inh"] + (int)S["T"]["value"]),
-                "E'", new SDT.Types.Actions((S) => S["E'"]["syn"] = S["E'1"]["syn"])
-                              });
+                // "+", "T", new SDT.Types.Actions((S) => S["E'1"]["inh"] = (int)S["E'"]["inh"] + (int)S["T"]["value"]), // summ operation
+                  "+", "T", new SDT.Types.Actions((S) => {
+                        int left = (int)S["E'"]["inh"];
+                        int right = (int)S["T"]["value"];
+                        S["E'1"]["inh"] = left + right;
+                        Console.WriteLine($"{left}+{right}={left + right} "); // вывод промежуточного вычисления
+                    }),
+                    "E'", 
+                    new SDT.Types.Actions((S) => S["E'"]["syn"] = S["E'1"]["syn"])
+                });
 
                             lAttrSDT.AddRule("E'",
                               new List<SDT.Symbol>()
@@ -2136,9 +2143,17 @@ namespace RaGsystems
                             lAttrSDT.AddRule("T'",
                               new List<SDT.Symbol>()
                               {
-                "*", "F", new SDT.Types.Actions((S) => S["T'1"]["inh"] = (int)S["T'"]["inh"] * (int)S["F"]["value"]),
-                "T'", new SDT.Types.Actions((S) => S["T'"]["syn"] = S["T'1"]["syn"])
-                              });
+                // "*", "F", new SDT.Types.Actions((S) => S["T'1"]["inh"] = (int)S["T'"]["inh"] * (int)S["F"]["value"]), // mult operation
+                "*", "F", 
+                new SDT.Types.Actions((S) => {
+                    int left = (int)S["T'"]["inh"];
+                    int right = (int)S["F"]["value"];
+                    S["T'1"]["inh"] = left * right;
+                    Console.WriteLine($"{left}*{right}={left * right} "); // вывод промежуточного вычисления
+                }),
+                "T'", 
+                new SDT.Types.Actions((S) => S["T'"]["syn"] = S["T'1"]["syn"])
+            });
 
                             lAttrSDT.AddRule("T'",
                               new List<SDT.Symbol>()
