@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace BCG;
@@ -191,10 +192,119 @@ public static class ByteCodeGenerator
         }
     }
 
-    private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code, int line)
+private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code, int line)
+{
+    expression = "v(a) c(123) ==";
+
+    var instructions = new List<Instruction>();
+    var stack = new Stack<string>();
+
+    var tokens = expression.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+    foreach (var token in tokens)
     {
-        // TODO:
+        if (token.StartsWith("c(") && token.EndsWith(")"))
+        {
+            var constValue = token.Substring(2, token.Length - 3);
+            if (int.TryParse(constValue, out int intValue))
+            {
+                // Для небольших целых используем специальную инструкцию
+                if (intValue >= 0 && intValue <= 255)
+                {
+                    instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_SMALL_INT, intValue, line));
+                }
+                else
+                {
+                    // Добавляем константу в таблицу
+                    if (!code.ConstTable.ContainsKey(intValue))
+                    {
+                        code.ConstTable.Add(intValue, code.ConstTable.Count);
+                    }
+                    instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_CONST, 
+                        code.ConstTable[intValue], line));
+                }
+            }
+            else if (float.TryParse(constValue, out float floatValue))
+            {
+                // Добавляем константу в таблицу
+                if (!code.ConstTable.ContainsKey(floatValue))
+                {
+                    code.ConstTable.Add(floatValue, code.ConstTable.Count);
+                }
+                instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_CONST, 
+                    code.ConstTable[floatValue], line));
+            }
+            else
+            {
+                // Строковая константа
+                if (!code.ConstTable.ContainsKey(constValue))
+                {
+                    code.ConstTable.Add(constValue, code.ConstTable.Count);
+                }
+                instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_CONST, 
+                    code.ConstTable[constValue], line));
+            }
+        }
+        else if (token.StartsWith("v(") && token.EndsWith(")"))
+        {
+            // Переменная
+            var varName = token.Substring(2, token.Length - 3);
+            instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_NAME, 
+                code.NameTable.GetOrAdd(varName), line));
+        }
+        // TODO float
+        else
+        {
+            // Оператор
+            switch (token)
+            {
+                case "+":
+                    instructions.Add(new ArithmeticInstruction(ArithmeticInstructionType.BINARY_ADD, line));
+                    break;
+                case "-":
+                    instructions.Add(new ArithmeticInstruction(ArithmeticInstructionType.BINARY_SUBTRACT, line));
+                    break;
+                case "*":
+                    instructions.Add(new ArithmeticInstruction(ArithmeticInstructionType.BINARY_MULTIPLY, line));
+                    break;
+                case "/":
+                    instructions.Add(new ArithmeticInstruction(ArithmeticInstructionType.BINARY_DIVIDE, line));
+                    break;
+                case "%":
+                    instructions.Add(new ArithmeticInstruction(ArithmeticInstructionType.BINARY_MODULO, line));
+                    break;
+                case "==":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.EQUAL, line));
+                    break;
+                case "<":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.LESS, line));
+                    break;
+                case ">":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.GREATER, line));
+                    break;
+                case "<=":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.LESS_EQUAL, line));
+                    break;
+                case ">=":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.GREATER_EQUAL, line));
+                    break;
+                case "!=":
+                    instructions.Add(new LogicInstruction(LogicInstructionType.NOT_EQUAL, line));
+                    break;
+                default:
+                    throw new Exception($"Unknown operator: {token} on line {line}");
+            }
+        }
     }
+
+    // TODO нужно преобразовать результат в булево значение?
+    if (toBool)
+    {
+        instructions.Add(new HelperInstruction(HelperInstructionType.TO_BOOL, line));
+    }
+
+    return instructions;
+}
     
     public struct ByteCode()
     {
