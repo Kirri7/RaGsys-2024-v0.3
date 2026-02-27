@@ -320,7 +320,6 @@ public static class ByteCodeGenerator
                 instructions.Add(new MemoryInstruction(MemoryInstructionType.LOAD_NAME, 
                     code.NameTable.GetOrAdd(varName), line));
             }
-            // TODO float
             else
             {
                 // Оператор
