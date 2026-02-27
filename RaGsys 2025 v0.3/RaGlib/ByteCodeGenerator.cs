@@ -192,9 +192,77 @@ public static class ByteCodeGenerator
         }
     }
 
+    private static string GetPostfix(string expression)
+    {
+        var chainPostfix = new SDT.Scheme(new List<SDT.Symbol>() { "identifier", "integer", "float", "+", "*", "-", "/", "(", ")", "%", "<", ">", "==", "<=", ">=" },
+            new List<SDT.Symbol>() { "C", "C'", "E", "E'", "T", "T'", "F" },
+            "C");
+
+
+        chainPostfix.AddRule("C", new List<SDT.Symbol>() { "E", "C'" });
+        var comparisonOperators = new List<(string op, string action)>
+        {
+            ("<", "<"),
+            (">", ">"),
+            ("==", "=="),
+            ("<=", "<="),
+            (">=", ">=")
+        };
+        foreach (var (op, action) in comparisonOperators)
+        {
+            chainPostfix.AddRule("C'", new List<SDT.Symbol>() { op, "E", SDT.Actions.SpacedPrint(action), "C'" });
+        }
+        chainPostfix.AddRule("C'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
+
+
+        chainPostfix.AddRule("E", new List<SDT.Symbol>() { "T", "E'" });
+        var additiveOperators = new List<(string op, string action)> 
+        {
+            ("+", "+"),
+            ("-", "-")
+        };
+        foreach (var (op, action) in additiveOperators)
+        {
+            chainPostfix.AddRule("E'", new List<SDT.Symbol>() { op, "T", SDT.Actions.SpacedPrint(action), "E'" });
+        }
+        chainPostfix.AddRule("E'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
+
+
+        chainPostfix.AddRule("T", new List<SDT.Symbol>() { "F", "T'" });
+        var multiplicativeOperators = new List<(string op, string action)> 
+        {
+            ("*", "*"),
+            ("/", "/"),
+            ("%", "%")
+        };
+        foreach (var (op, action) in multiplicativeOperators)
+        {
+            chainPostfix.AddRule("T'", new List<SDT.Symbol>() { op, "F", SDT.Actions.SpacedPrint(action), "T'" });
+        }
+        chainPostfix.AddRule("T'", new List<SDT.Symbol>() { SDT.Symbol.Epsilon });
+
+        chainPostfix.AddRule("F", new List<SDT.Symbol>() { "identifier", SDT.Actions.PrintIdentifier });
+        chainPostfix.AddRule("F", new List<SDT.Symbol>() { "integer", SDT.Actions.PrintInteger });
+        chainPostfix.AddRule("F", new List<SDT.Symbol>() { "float", SDT.Actions.PrintFloat });
+        chainPostfix.AddRule("F", new List<SDT.Symbol>() { "(", "C", ")" });
+
+        var chainTranslator = new SDT.LLTranslator(chainPostfix);
+
+        var inp_str = new SDT.PythonLexer().Parse(expression);
+        
+        var outputBuilder = new StringBuilder();
+        SDT.Actions.SetOutputBuilder(outputBuilder);
+
+        if (!chainTranslator.Parse(inp_str))
+        {
+            throw new Exception($"Can't convert to postfix: {expression} -> {inp_str} -> error");
+        }
+        return outputBuilder.ToString();
+    }
+
     private static List<Instruction> ParseExpression(string expression, bool toBool, ByteCode code, int line)
     {
-        expression = "v(a) c(123) ==";
+        expression = GetPostfix(expression);
 
         var instructions = new List<Instruction>();
         var stack = new Stack<string>();
