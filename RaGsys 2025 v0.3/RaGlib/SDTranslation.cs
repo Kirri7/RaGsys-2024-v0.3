@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Data;
 using System.IO;
+using System.Text;
 
 /// Синтаксически управляемая трансляция
 namespace SDT {  /// Обычный символ грамматики
@@ -715,5 +716,20 @@ public class Symbol : ICloneable {
         /// Печать something  консоль
         static public Types.Actions Print(object obj) =>
             (_) => Console.Write(obj.ToString());
+
+        static private StringBuilder _outputBuilder; // TODO nullable
+        
+        static public void SetOutputBuilder(StringBuilder sb) => _outputBuilder = sb;
+
+        static public Types.Actions SpacedPrint(object obj) =>
+            (_) => _outputBuilder?.Append(obj.ToString() + " ");
+        static public Types.Actions PrintIdentifier = 
+            (dict) => _outputBuilder?.Append("v(" + dict["identifier"]?.Attributes?["literal"]?.ToString() + ") "); // variable
+        
+        static public Types.Actions PrintInteger = 
+            (dict) => _outputBuilder?.Append("c(" + dict["integer"]?.Attributes?["literal"]?.ToString() + ") "); // constant
+        
+        static public Types.Actions PrintFloat = 
+            (dict) => _outputBuilder?.Append("c(" + dict["float"]?.Attributes?["literal"]?.ToString() + ") "); // constant
     }
 }
