@@ -297,7 +297,6 @@ public static class ByteCodeGenerator
             }
         }
 
-        // TODO нужно преобразовать результат в булево значение?
         if (toBool)
         {
             instructions.Add(new HelperInstruction(HelperInstructionType.TO_BOOL, line));
